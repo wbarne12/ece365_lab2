@@ -21,7 +21,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 #https://www.geeksforgeeks.org/dsa/program-to-find-whether-a-given-number-is-power-of-2/
-def is_power_of_two(n):
+def is_power_of_two(n) -> bool:
     return (n > 0) and ((n & (n - 1)) == 0)
 
 # Just checks if args are a power of two
