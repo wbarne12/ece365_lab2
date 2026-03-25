@@ -52,21 +52,27 @@ if (__name__ == "__main__"):
     total_blocks: int = sets * blocks
     cache_size: int = total_blocks * size
 
-    OFFSET_bits = int(math.log2(size))
-    INDEX_bits = int(math.log2(sets))
-    TAG_bits = cache_size - INDEX_bits - OFFSET_bits
+    offset_bits = int(math.log2(size))
+    index_bits = int(math.log2(sets))
+    tag_bits = 32 - index_bits - offset_bits
 
     address_list: list = read_file(trace)
 
 
     print("-------------------Addresses------------------")
     for addr in address_list:
-        index_pos = OFFSET_bits + INDEX_bits
-        tag_pos = index_pos + TAG_bits
+        index_pos = offset_bits + index_bits
+        tag_pos = index_pos + tag_bits
+
+        bin_offset = bits(addr,0,offset_bits)
+        bin_index = bits(addr,offset_bits,index_pos)
+        bin_tag = bits(addr,index_pos,tag_pos)
+
         print(f"{addr:#010x}  {addr:032b}")
-        print(f"{bits(addr, 0, OFFSET_bits):0{OFFSET_bits}b}")
-        print(f"{bits(addr, OFFSET_bits, index_pos):0{INDEX_bits}b}")
-        #print(f"{bits(addr, index_pos, tag_pos):0{TAG_bits}b}")
+        print("offset:",f"{bin_offset:0{offset_bits}b}")
+        print("index:",f"{bin_index:0{index_bits}b}")
+        print("tag:",f"{bin_tag:0{tag_bits}b}")
+        print()
     print("----------------------------------------------")
 
 
@@ -74,7 +80,7 @@ if (__name__ == "__main__"):
     print(sets,blocks,size,trace,total_blocks,cache_size);
 
     print("tag,index,offset");
-    print(TAG_bits,INDEX_bits,OFFSET_bits);
+    print(tag_bits,index_bits,offset_bits);
     
     
 
