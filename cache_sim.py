@@ -26,9 +26,9 @@ def is_power_of_two(n) -> bool:
 
 # Just checks if args are a power of two
 def error_check(args: argparse.Namespace):
-    is_power_two: bool = is_power_of_two(args.sets) & is_power_of_two(args.size) & is_power_of_two(args.blocks)
-    if (is_power_two == False):
-        sys.exit("Error: Arguments are not a power of two")
+    power_two: bool = is_power_of_two(args.sets) & is_power_of_two(args.size) & is_power_of_two(args.blocks)
+    if (not power_two):
+        sys.exit("Error: Arguments are not a power of two.")
     
 
 # Main execution
@@ -41,15 +41,19 @@ if (__name__ == "__main__"):
     size:   int = args.size 
     trace:  str = args.trace
 
-    address_list = read_file(trace)
+    address_list: list = read_file(trace)
 
     # Can now get value of args using args.sets, args.blocks, args.size, args.trace
     total_blocks: int = sets * blocks
     cache_size: int = total_blocks * size
 
-    # Asked chat for good data structure and it gave this for the cache
-    cache = [[ {"tag": None, "valid": False} for _ in range(blocks) ] for _ in range(sets)]
+    # cache[index] = [tag1, tag2, tag3 ... ]
+    # Not storing actual data since it's just a sim
+    cache = [ [] for _ in range(sets) ]
+
 
     #OFFSET bits = log2(size)
     #INDEX bits = log2(sets)
     #TAG = remaining bits
+
+    
