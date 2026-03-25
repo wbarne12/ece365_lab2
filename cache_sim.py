@@ -1,5 +1,6 @@
 import argparse
 import sys
+import math
 
 # Returns a list with all values formatted as ints
 # Conversion from hex to int performed
@@ -29,7 +30,15 @@ def error_check(args: argparse.Namespace):
     power_two: bool = is_power_of_two(args.sets) & is_power_of_two(args.size) & is_power_of_two(args.blocks)
     if (not power_two):
         sys.exit("Error: Arguments are not a power of two.")
-    
+
+# A bit extractor, pass the indecies you want to excract and the address
+# returns only the part of the address between those indecies
+def bits(addr: int, start: int, stop: int) -> int:
+    #"""Extract bits [start:stop] from addr (stop exclusive, 0 = LSB)."""
+    k = stop - start        # number of bits to grab
+    mask = (1 << k) - 1     # e.g., 0b1111 for k=4
+    return (addr >> start) & mask
+
 
 # Main execution
 if (__name__ == "__main__"):
@@ -40,23 +49,42 @@ if (__name__ == "__main__"):
     blocks: int = args.blocks
     size:   int = args.size 
     trace:  str = args.trace
+    total_blocks: int = sets * blocks
+    cache_size: int = total_blocks * size
+
+    OFFSET_bits = int(math.log2(size))
+    INDEX_bits = int(math.log2(sets))
+    TAG_bits = cache_size - INDEX_bits - OFFSET_bits
 
     address_list: list = read_file(trace)
 
-    # Can now get value of args using args.sets, args.blocks, args.size, args.trace
-    total_blocks: int = sets * blocks
-    cache_size: int = total_blocks * size
-    #print("sets,blocks,size,trace,total_blocks,cache_size");
-    #print(sets,blocks,size,trace,total_blocks,cache_size);
+
+    print("-------------------Addresses------------------")
+    for addr in address_list:
+        index_pos = OFFSET_bits + INDEX_bits
+        tag_pos = index_pos + TAG_bits
+        print(f"{addr:#010x}  {addr:032b}")
+        print(f"{bits(addr, 0, OFFSET_bits):0{OFFSET_bits}b}")
+        print(f"{bits(addr, OFFSET_bits, index_pos):0{INDEX_bits}b}")
+        #print(f"{bits(addr, index_pos, tag_pos):0{TAG_bits}b}")
+    print("----------------------------------------------")
+
+
+    print("sets,blocks,size,trace,total_blocks,cache_size");
+    print(sets,blocks,size,trace,total_blocks,cache_size);
+
+    print("tag,index,offset");
+    print(TAG_bits,INDEX_bits,OFFSET_bits);
+    
+    
 
     # cache[index] = [tag1, tag2, tag3 ... ]
     # Not storing actual data since it's just a sim
     cache = [ [] for _ in range(sets) ]
 
 
-    #OFFSET bits = log2(size)
-    #INDEX bits = log2(sets)
-    #TAG = remaining bits
+
+
     accesses = 5
     hits = 4
     misses = 3
