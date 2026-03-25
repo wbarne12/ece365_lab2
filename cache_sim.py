@@ -46,6 +46,8 @@ if (__name__ == "__main__"):
     # Can now get value of args using args.sets, args.blocks, args.size, args.trace
     total_blocks: int = sets * blocks
     cache_size: int = total_blocks * size
+    #print("sets,blocks,size,trace,total_blocks,cache_size");
+    #print(sets,blocks,size,trace,total_blocks,cache_size);
 
     # cache[index] = [tag1, tag2, tag3 ... ]
     # Not storing actual data since it's just a sim
@@ -55,5 +57,11 @@ if (__name__ == "__main__"):
     #OFFSET bits = log2(size)
     #INDEX bits = log2(sets)
     #TAG = remaining bits
-
-    
+    accesses = 5
+    hits = 4
+    misses = 3
+    misrate = 2
+    print(f"{'Accesses:':<12}{accesses:>10}")
+    print(f"{'Hits:':<12}{hits:>10}")
+    print(f"{'Misses:':<12}{misses:>10}")
+    print(f"{'Miss Rate:':<12}{misrate:>10}%")
