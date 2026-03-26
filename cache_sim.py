@@ -96,13 +96,6 @@ if (__name__ == "__main__"):
         index:  int = bits(i, offset_bits, offset_bits + index_bits)
         tag:    int = bits(i, offset_bits + index_bits, 32)
 
-        #if blocks==1: # Direct mapped cache
-         #   if cache[index]==tag:
-          #      hits+=1
-           # else:
-            #    misses +=1
-             #   cache[index] = tag
-        #else: # N way associative cache
         if (tag in cache[index]): # Hit
             hits += 1
             cache[index].remove(tag) # make it recently used
