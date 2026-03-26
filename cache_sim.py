@@ -1,3 +1,4 @@
+from collections import deque
 import argparse
 import sys
 import math
@@ -39,7 +40,7 @@ def bits(addr: int, start: int, stop: int) -> int:
     return (addr >> start) & mask
 
 # Prints out all of the address, and the way they break up into the cache
-def address_log(fd):
+def address_log(fd,address_list, offset_bits, index_bits, tag_bits, sets, blocks, size, total_blocks, cache_size):
     print(sys.argv, file=fd)
     print(file=fd)
     print("-------------------Addresses------------------", file=fd)
@@ -80,11 +81,14 @@ if (__name__ == "__main__"):
 
     # Generate log file for address,
     logging = open("temp.log", "w")
-    address_log(logging)
+    address_log(logging, address_list, offset_bits, index_bits, tag_bits, sets, blocks, size, total_blocks, cache_size)
     logging.close()
     
     # cache[index] = [tag1, tag2, tag3 ... tagSize]
-    cache = [ [] for _ in range(sets) ]
+    if blocks ==1:
+        cache = [None]*sets # one tag per index
+    else:
+        cache = [deque(maxlen=blocks) for _ in range(sets) ]
 
     hits:   int = 0
     misses: int = 0
@@ -95,23 +99,37 @@ if (__name__ == "__main__"):
         index:  int = bits(i, offset_bits, offset_bits + index_bits)
         tag:    int = bits(i, offset_bits + index_bits, 32)
 
-        if (tag in cache[index]): # Hit
-            hits += 1
-            cache[index].remove(tag) # make it recently used
-            cache[index].insert(0, tag)
+        if blocks==1: # Direct mapped cache
+            if cache[index]==tag:
+                hits+=1
+            else:
+                misses +=1
+                cache[index] = tag
+                #no prefetching in the dirrect mapped, I'm not sure if it should have it
+        else: # N way associative cache
+            if (tag in cache[index]): # Hit
+                hits += 1
+                cache[index].remove(tag) # make it recently used
+                cache[index].append(tag)
 
-        else: # Miss
-            misses += 1
-            if (len(cache[index]) >= blocks):
-                cache[index].pop()
-            cache[index].insert(0, tag)
-            if(prefetch):
-                cache[(bits(i+size,offset_bits,offset_bits+index_bits))%total_blocks].insert(0,bits(i+size, offset_bits + index_bits, 32))
+            else: # Miss
+                misses += 1
+                if len(cache[index]) >= blocks:
+                    cache[index].popleft()
+                cache[index].append(tag)
+                if(prefetch): # Adds prefetching
+                    next_addr = i + size
+                    next_index = bits(next_addr, offset_bits, offset_bits + index_bits)
+                    next_tag   = bits(next_addr, offset_bits + index_bits, 32)
+                    if next_tag not in cache[next_index]:
+                        if len(cache[next_index]) >= blocks:
+                            cache[next_index].popleft()
+                        cache[next_index].append(next_tag)
 
 
     accesses = hits + misses
-    misrate = misses/accesses * 100
+    misrate = (misses/accesses) * 100
     print(f"{'Accesses:':<12}{accesses:>10}")
     print(f"{'Hits:':<12}{hits:>10}")
     print(f"{'Misses:':<12}{misses:>10}")
-    print(f"{'Miss Rate:':<12}{misrate:>10}%")
+    print(f"{'Miss Rate:':<12}{misrate:>10.3f}%")
