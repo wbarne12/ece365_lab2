@@ -85,10 +85,7 @@ if (__name__ == "__main__"):
     logging.close()
     
     # cache[index] = [tag1, tag2, tag3 ... tagSize]
-    if blocks ==1:
-        cache = [None]*sets # one tag per index
-    else:
-        cache = [deque(maxlen=blocks) for _ in range(sets) ]
+    cache = [deque(maxlen=blocks) for _ in range(sets) ]
 
     hits:   int = 0
     misses: int = 0
@@ -99,32 +96,32 @@ if (__name__ == "__main__"):
         index:  int = bits(i, offset_bits, offset_bits + index_bits)
         tag:    int = bits(i, offset_bits + index_bits, 32)
 
-        if blocks==1: # Direct mapped cache
-            if cache[index]==tag:
-                hits+=1
-            else:
-                misses +=1
-                cache[index] = tag
-                #no prefetching in the dirrect mapped, I'm not sure if it should have it
-        else: # N way associative cache
-            if (tag in cache[index]): # Hit
-                hits += 1
-                cache[index].remove(tag) # make it recently used
-                cache[index].append(tag)
+        #if blocks==1: # Direct mapped cache
+         #   if cache[index]==tag:
+          #      hits+=1
+           # else:
+            #    misses +=1
+             #   cache[index] = tag
+        #else: # N way associative cache
+        if (tag in cache[index]): # Hit
+            hits += 1
+            cache[index].remove(tag) # make it recently used
+            cache[index].append(tag)
 
-            else: # Miss
-                misses += 1
-                if len(cache[index]) >= blocks:
-                    cache[index].popleft()
-                cache[index].append(tag)
-                if(prefetch): # Adds prefetching
-                    next_addr = i + size
-                    next_index = bits(next_addr, offset_bits, offset_bits + index_bits)
-                    next_tag   = bits(next_addr, offset_bits + index_bits, 32)
-                    if next_tag not in cache[next_index]:
-                        if len(cache[next_index]) >= blocks:
-                            cache[next_index].popleft()
-                        cache[next_index].append(next_tag)
+        else: # Miss
+            misses += 1
+            if len(cache[index]) >= blocks:
+                cache[index].popleft()
+            cache[index].append(tag)
+
+        if(prefetch): # Adds prefetching
+            next_addr = i + size
+            next_index = bits(next_addr, offset_bits, offset_bits + index_bits)
+            next_tag   = bits(next_addr, offset_bits + index_bits, 32)
+            if next_tag not in cache[next_index]:
+                if len(cache[next_index]) >= blocks:
+                    cache[next_index].popleft()
+                cache[next_index].append(next_tag)
 
 
     accesses = hits + misses
