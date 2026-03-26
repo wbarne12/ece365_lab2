@@ -31,7 +31,7 @@ def error_check(args: argparse.Namespace):
     if (not power_two):
         sys.exit("Error: Arguments are not a power of two.")
 
-# A bit extractor, pass the indecies you want to excract and the address
+# A bit extractor, pass the indecies you want to extract and the address
 # returns only the part of the address between those indecies
 def bits(addr: int, start: int, stop: int) -> int:
     #"""Extract bits [start:stop] from addr (stop exclusive, 0 = LSB)."""
@@ -39,6 +39,33 @@ def bits(addr: int, start: int, stop: int) -> int:
     mask = (1 << k) - 1     # e.g., 0b1111 for k=4
     return (addr >> start) & mask
 
+def address_log(fd):
+    print(sys.argv, file=fd)
+    print(file=fd)
+
+    print("-------------------Addresses------------------", file=fd)
+    for addr in address_list:
+        index_pos = offset_bits + index_bits
+        tag_pos = index_pos + tag_bits
+
+        bin_offset = bits(addr,0,offset_bits)
+        bin_index = bits(addr,offset_bits,index_pos)
+        bin_tag = bits(addr,index_pos,tag_pos)
+
+        print(f"{addr:#010x}  {addr:032b}", file=fd)
+        print("offset:",f"{bin_offset:0{offset_bits}b}", file=fd)
+        print("index:",f"{bin_index:0{index_bits}b}", file=fd)
+        print("tag:",f"{bin_tag:0{tag_bits}b}", file=fd)
+        print(file=fd)
+    print("----------------------------------------------", file=fd)
+
+
+    print("sets,blocks,size,trace,total_blocks,cache_size", file=fd);
+    print(sets,blocks,size,trace,total_blocks,cache_size, file=fd);
+
+    print("tag,index,offset", file=fd);
+    print(tag_bits,index_bits,offset_bits, file=fd);
+    
 
 # Main execution
 if (__name__ == "__main__"):
@@ -58,43 +85,38 @@ if (__name__ == "__main__"):
 
     address_list: list = read_file(trace)
 
-
-    print("-------------------Addresses------------------")
-    for addr in address_list:
-        index_pos = offset_bits + index_bits
-        tag_pos = index_pos + tag_bits
-
-        bin_offset = bits(addr,0,offset_bits)
-        bin_index = bits(addr,offset_bits,index_pos)
-        bin_tag = bits(addr,index_pos,tag_pos)
-
-        print(f"{addr:#010x}  {addr:032b}")
-        print("offset:",f"{bin_offset:0{offset_bits}b}")
-        print("index:",f"{bin_index:0{index_bits}b}")
-        print("tag:",f"{bin_tag:0{tag_bits}b}")
-        print()
-    print("----------------------------------------------")
-
-
-    print("sets,blocks,size,trace,total_blocks,cache_size");
-    print(sets,blocks,size,trace,total_blocks,cache_size);
-
-    print("tag,index,offset");
-    print(tag_bits,index_bits,offset_bits);
+    # Generate log file for address,
+    logging = open("temp.log", "w")
+    address_log(logging)
+    logging.close()
     
-    
-
-    # cache[index] = [tag1, tag2, tag3 ... ]
+    # cache[index] = [tag1, tag2, tag3 ... tagSize]
     # Not storing actual data since it's just a sim
     cache = [ [] for _ in range(sets) ]
 
+    hits:   int = 0
+    misses: int = 0
 
+    print(len(address_list))
 
+    for i in address_list:
+        offset: int = bits(i, 0, offset_bits)
+        index:  int = bits(i, offset_bits, offset_bits + index_bits)
+        tag:    int = bits(i, offset_bits + index_bits, 32)
 
-    accesses = 5
-    hits = 4
-    misses = 3
-    misrate = 2
+        if (tag in cache[index]):
+            hits += 1
+            cache[index].remove(tag)
+            cache[index].insert(0, tag)
+
+        else:
+            misses += 1
+            if (len(cache[index]) >= blocks):
+                cache[index].pop()
+            cache[index].insert(0, tag)
+
+    accesses = hits + misses
+    misrate = misses/accesses * 100
     print(f"{'Accesses:':<12}{accesses:>10}")
     print(f"{'Hits:':<12}{hits:>10}")
     print(f"{'Misses:':<12}{misses:>10}")
