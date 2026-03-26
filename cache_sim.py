@@ -44,12 +44,9 @@ def address_log(fd):
     print(file=fd)
     print("-------------------Addresses------------------", file=fd)
     for addr in address_list:
-        index_pos = offset_bits + index_bits
-        tag_pos = index_pos + tag_bits
-
         bin_offset = bits(addr,0,offset_bits)
-        bin_index = bits(addr,offset_bits,index_pos)
-        bin_tag = bits(addr,index_pos,tag_pos)
+        bin_index = bits(addr,offset_bits,offset_bits+index_bits)
+        bin_tag = bits(addr,offset_bits+index_bits,32)
 
         print(f"{addr:#010x}  {addr:032b}", file=fd)
         print("offset:",f"{bin_offset:0{offset_bits}b}", file=fd)
@@ -57,11 +54,8 @@ def address_log(fd):
         print("tag:",f"{bin_tag:0{tag_bits}b}", file=fd)
         print(file=fd)
     print("----------------------------------------------", file=fd)
-    print("sets,blocks,size,trace,total_blocks,cache_size", file=fd);
-    print(sets,blocks,size,trace,total_blocks,cache_size, file=fd);
-    print("tag,index,offset", file=fd);
-    print(tag_bits,index_bits,offset_bits, file=fd);
-    
+    print("sets:", sets, "| blocks:",blocks, "| size:", size, "| total_blocks:", total_blocks, "| cache_size:", cache_size, file=fd)
+    print("tag:",tag_bits, "bits | index:",index_bits,"bits | offset:", offset_bits, "bits", file=fd)
 
 # Main execution
 if (__name__ == "__main__"):
