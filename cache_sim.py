@@ -13,11 +13,11 @@ def read_file(trace: str) -> list:
 def parse_args() -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description ="A program to simulate a cache.")
 
-    # TODO: Add --policy or --prefetch. Will depend on what we choose to implement.
     parser.add_argument("--sets", type=int, required=True)
     parser.add_argument("--blocks", type=int, required=True)
     parser.add_argument("--size", type=int, required=True)
     parser.add_argument("--trace", type=str, required=True)
+    parser.add_argument("--prefetch", action='store_true')
 
     return parser.parse_args()
 
@@ -34,15 +34,14 @@ def error_check(args: argparse.Namespace):
 # A bit extractor, pass the indecies you want to extract and the address
 # returns only the part of the address between those indecies
 def bits(addr: int, start: int, stop: int) -> int:
-    #"""Extract bits [start:stop] from addr (stop exclusive, 0 = LSB)."""
     k = stop - start        # number of bits to grab
     mask = (1 << k) - 1     # e.g., 0b1111 for k=4
     return (addr >> start) & mask
 
+# Prints out all of the address, and the way they break up into the cache
 def address_log(fd):
     print(sys.argv, file=fd)
     print(file=fd)
-
     print("-------------------Addresses------------------", file=fd)
     for addr in address_list:
         index_pos = offset_bits + index_bits
@@ -58,11 +57,8 @@ def address_log(fd):
         print("tag:",f"{bin_tag:0{tag_bits}b}", file=fd)
         print(file=fd)
     print("----------------------------------------------", file=fd)
-
-
     print("sets,blocks,size,trace,total_blocks,cache_size", file=fd);
     print(sets,blocks,size,trace,total_blocks,cache_size, file=fd);
-
     print("tag,index,offset", file=fd);
     print(tag_bits,index_bits,offset_bits, file=fd);
     
@@ -72,13 +68,16 @@ if (__name__ == "__main__"):
     args: argparse.Namespace = parse_args()
     error_check(args)
 
+    # Set all of the parsed command line args
     sets:   int = args.sets
     blocks: int = args.blocks
     size:   int = args.size 
     trace:  str = args.trace
+    prefetch: bool = args.prefetch
     total_blocks: int = sets * blocks
     cache_size: int = total_blocks * size
 
+    # calculate the size of each part of the cache
     offset_bits = int(math.log2(size))
     index_bits = int(math.log2(sets))
     tag_bits = 32 - index_bits - offset_bits
@@ -91,29 +90,30 @@ if (__name__ == "__main__"):
     logging.close()
     
     # cache[index] = [tag1, tag2, tag3 ... tagSize]
-    # Not storing actual data since it's just a sim
     cache = [ [] for _ in range(sets) ]
 
     hits:   int = 0
     misses: int = 0
 
-    print(len(address_list))
-
+    #iterates through all addresses and caches them
     for i in address_list:
         offset: int = bits(i, 0, offset_bits)
         index:  int = bits(i, offset_bits, offset_bits + index_bits)
         tag:    int = bits(i, offset_bits + index_bits, 32)
 
-        if (tag in cache[index]):
+        if (tag in cache[index]): # Hit
             hits += 1
-            cache[index].remove(tag)
+            cache[index].remove(tag) # make it recently used
             cache[index].insert(0, tag)
 
-        else:
+        else: # Miss
             misses += 1
             if (len(cache[index]) >= blocks):
                 cache[index].pop()
             cache[index].insert(0, tag)
+            if(prefetch):
+                cache[(bits(i+size,offset_bits,offset_bits+index_bits))%total_blocks].insert(0,bits(i+size, offset_bits + index_bits, 32))
+
 
     accesses = hits + misses
     misrate = misses/accesses * 100
