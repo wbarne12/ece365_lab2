@@ -2,7 +2,7 @@ import random
 
 # Configuration
 MEMORY_SIZE = 1024 * 1024 # 1 MB simulated memory
-NUM_ACCESSES = 100000 # Total accesses per trace
+NUM_ACCESSES = 10000 # Total accesses per trace
 
 def generate_linear () :
     """ Generates a sequential linear scan ( good spatial locality )."""

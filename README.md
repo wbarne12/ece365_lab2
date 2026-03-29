@@ -1,3 +1,5 @@
+https://github.com/wbarne12/ece365_lab2
+
 # ece365_lab2
 To run: "python3 cache_sim.py --sets SETS --blocks BLOCKS --size SIZE --trace TRACE"
 
@@ -11,3 +13,4 @@ Blocks      (int): Number of blocks per set  (associativity).
 ## File requirements
 For the program to properly run, each memory address must be in hex format ie 0x1234ABCD.  
 Each address must be seperated by a new line character. Look at test.txt for an example.
+
